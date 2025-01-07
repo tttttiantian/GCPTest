@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>生成测试用例和覆盖率报告</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* 原有样式保持不变 */
+        /* 添加聊天界面相关样式 */
+        .chat-container {
+            display: flex;
+            /* 或 block，根据你的布局需求 */
+            background: #667eea;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            max-width: 1200px;
+            width: calc(100% - 40px);
+            height: calc(100vh - 100px);
+            margin: 20px auto;
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        .chat-messages {
+            height: calc(100% - 120px);
+            /* 调整以适应输入框 */
+            overflow-y: auto;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-sizing: border-box;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            max-width: 80%;
+            word-wrap: break-word;
+            /* 确保长消息换行 */
+        }
+
+        .message.user {
+            margin-left: auto;
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            border-radius: 20px 20px 0 20px;
+        }
+
+        .message.bot {
+            margin-right: auto;
+            background: #e0eafc;
+            color: #333;
+            padding: 15px;
+            border-radius: 20px 20px 20px 0;
+        }
+
+        .chat-input {
+            display: flex;
+            gap: 10px;
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            height: 60px;
+            /* 固定高度 */
+            box-sizing: border-box;
+        }
+
+        .chat-input textarea {
+            flex-grow: 1;
+            height: 100%;
+            padding: 15px;
+            border: 2px solid #667eea;
+            border-radius: 25px;
+            resize: none;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+
+        .chat-input button {
+            padding: 0 30px;
+            height: 100%;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            white-space: nowrap;
+            /* 防止按钮文字换行 */
+        }
+
+        .chat-input button:hover {
+            background: #764ba2;
+        }
+
+        /* 确保标题不会导致布局问题 */
+        .chat-container h1 {
+            margin: 0 0 20px 0;
+            color: white;
+            font-size: 24px;
+        }
+
+        /* 更新主要内容区域样式以支持切换 */
+        .test-container {
+            display: block;
+        }
+
+        /* 活跃的导航项样式 */
+        .sidebar ul li a.active {
+            background: rgba(255, 255, 255, 0.4);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 在现有的 CSS 中添加动画效果 */
+        .fade-enter {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .fade-enter-active {
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 0.3s, transform 0.3s;
+        }
+
+        /* 适配移动设备 */
+        @media (max-width: 768px) {
+            .chat-container {
+                height: calc(100vh - 80px);
+                margin: 10px;
+                padding: 15px;
+            }
+
+            .chat-messages {
+                padding: 15px;
+            }
+
+            .message {
+                max-width: 90%;
+            }
+
+            .chat-input {
+                height: 50px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="sidebar">
+        <img src="https://pic.imgdb.cn/item/670d2088d29ded1a8c3e9f0d.png" alt="Logo">
+        <div class="logo-text"></div>
+        <ul>
+            <li><a href="#" class="nav-link active" data-target="test">Generate Test Cases</a></li>
+            <li><a href="#" class="nav-link" data-target="chat">Chat With GCPTest</a></li>
+        </ul>
+        <div class="history-section">
+            <h3>历史记录</h3>
+            <div id="historyList"></div>
+            <button id="clearHistory">清空历史记录</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div id="particles-js"></div>
+        <!-- 测试用例生成界面 -->
+        <div class="test-container container">
+            {% if coverage_report %}
+            <h1>生成结果</h1>
+
+            <div class="results-header">
+                <h2 style="display: inline-block;">覆盖率报告</h2>
+                <a href="{{ download_url }}" class="download-button">下载测试</a>
+            </div>
+
+            <!-- 返回按钮 -->
+            <button id="goBackButton" class="go-back-btn">返回</button>
+
+
+            <div class="coverage-container">
+                <!-- 覆盖率摘要 -->
+                {% if coverage_report.summary %}
+                <div class="coverage-summary">
+                    <h3>覆盖率摘要</h3>
+                    <div class="summary-grid">
+                        <div class="summary-item">
+                            <span class="label">行覆盖率:</span>
+                            <span class="value">{{ coverage_report.summary.line_rate }}</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">函数覆盖率:</span>
+                            <span class="value">{{ coverage_report.summary.function_rate }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="coverage-tabs">
+                    <button class="coverage-tab active" data-target="line-coverage">行覆盖率</button>
+                    <button class="coverage-tab" data-target="function-coverage">函数覆盖率</button>
+                </div>
+
+                <div class="coverage-content active" id="line-coverage">
+                    <div class="report">
+                        <pre>{{ coverage_report.line|safe }}</pre>
+                    </div>
+                </div>
+
+                <div class="coverage-content" id="function-coverage">
+                    <div class="report">
+                        <pre>{{ coverage_report.function|safe }}</pre>
+                    </div>
+                </div>
+
+            </div>
+            {% else %}
+            <h1 id="typingText">Hand in your requirements and code, and we'll help you generate test cases.</h1>
+            <form method="post" enctype="multipart/form-data">
+                <label for="test_requirements">请输入测试需求：</label>
+                <textarea id="test_requirements" name="test_requirements" rows="3"></textarea>
+                <div class="file-upload">
+                    <label for="code_file">上传代码文件：</label>
+                    <label for="code_file" class="file-label">选择文件</label>
+                    <input type="file" id="code_file" name="code_file" accept=".py">
+                    <span id="fileName" class="file-name"></span>
+                </div>
+                <input type="submit" value="生成">
+            </form>
+            {% endif %}
+        </div>
+
+        <!-- 聊天界面 -->
+        <div class="chat-container container" style="display: none;">
+            <h1>Chat with GCPTest</h1>
+            <div class="chat-messages" id="chatMessages">
+                <div class="message bot">
+                    Hello! I'm GCPTest. How can I help you with test case generation today?
+                </div>
+            </div>
+            <div class="chat-input">
+                <textarea id="chatInput" placeholder="Type your message here..."></textarea>
+                <button id="sendMessage">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="uploadModal" class="modal">
+        <div class="modal-content">
+            <p>文件上传成功，请点击生成。</p>
+            <button class="close-btn" id="closeModal">关闭</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Tab switching functionality for coverage reports
+            const tabs = document.querySelectorAll('.coverage-tab');
+            const contents = document.querySelectorAll('.coverage-content');
+
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    tabs.forEach(t => t.classList.remove('active'));
+                    contents.forEach(c => c.classList.remove('active'));
+
+                    tab.classList.add('active');
+                    const targetId = tab.getAttribute('data-target');
+                    document.getElementById(targetId).classList.add('active');
+                });
+            });
+
+
+
+            // Navigation functionality
+            const navLinks = document.querySelectorAll('.nav-link');
+            const testContainer = document.querySelector('.test-container');
+            const chatContainer = document.querySelector('.chat-container');
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    navLinks.forEach(l => l.classList.remove('active'));
+                    this.classList.add('active');
+
+                    const target = this.getAttribute('data-target');
+                    testContainer.style.display = target === 'test' ? 'block' : 'none';
+                    chatContainer.style.display = target === 'chat' ? 'block' : 'none';
+                });
+            });
+
+            // File upload functionality
+            const fileInput = document.getElementById('code_file');
+            const modal = document.getElementById('uploadModal');
+            const closeModalBtn = document.getElementById('closeModal');
+            const fileNameElement = document.getElementById('fileName');
+
+            if (fileInput) {
+                fileInput.addEventListener('change', function () {
+                    if (this.files.length > 0) {
+                        fileNameElement.textContent = this.files[0].name;
+                        modal.classList.add('show');
+                    }
+                });
+            }
+
+            if (closeModalBtn) {
+                closeModalBtn.addEventListener('click', () => modal.classList.remove('show'));
+            }
+
+            window.addEventListener('click', (e) => {
+                if (e.target === modal) modal.classList.remove('show');
+            });
+
+            // Chat functionality
+            const chatInput = document.getElementById('chatInput');
+            const sendButton = document.getElementById('sendMessage');
+            const chatMessages = document.getElementById('chatMessages');
+
+            // 辅助函数：创建一个临时的文本区域来复制内容
+            function fallbackCopyTextToClipboard(text, button) {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                
+                // 将文本区域设置为不可见
+                textArea.style.position = 'fixed';
+                textArea.style.top = '0';
+                textArea.style.left = '0';
+                textArea.style.width = '2em';
+                textArea.style.height = '2em';
+                textArea.style.padding = '0';
+                textArea.style.border = 'none';
+                textArea.style.outline = 'none';
+                textArea.style.boxShadow = 'none';
+                textArea.style.background = 'transparent';
+                
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+
+                try {
+                    document.execCommand('copy');
+                    updateCopyButton(button, true);
+                } catch (err) {
+                    console.error('Fallback: Oops, unable to copy', err);
+                    updateCopyButton(button, false);
+                }
+
+                document.body.removeChild(textArea);
+            }
+
+            // 更新复制按钮的状态
+            function updateCopyButton(button, success) {
+                const copyText = button.querySelector('.copy-text');
+                const icon = button.querySelector('i');
+                
+                if (success) {
+                    button.classList.add('copied');
+                    copyText.textContent = 'Copied!';
+                    icon.className = 'fas fa-check check-icon';
+                    
+                    setTimeout(() => {
+                        button.classList.remove('copied');
+                        copyText.textContent = 'Copy';
+                        icon.className = 'fas fa-copy copy-icon';
+                    }, 2000);
+                } else {
+                    button.classList.add('error');
+                    copyText.textContent = 'Error!';
+                    icon.className = 'fas fa-times';
+                    
+                    setTimeout(() => {
+                        button.classList.remove('error');
+                        copyText.textContent = 'Copy';
+                        icon.className = 'fas fa-copy copy-icon';
+                    }, 2000);
+                }
+            }
+
+            // 修改的 addMessage 函数
+            function addMessage(message, isUser = false) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${isUser ? 'user' : 'bot'}`;
+                
+                if (isUser) {
+                    messageDiv.textContent = message;
+                } else {
+                    // 处理机器人消息中的代码块
+                    const formattedMessage = message.replace(/```([\s\S]*?)```/g, function(match, code) {
+                        const codeWithoutFirstLine = code.split('\n');
+                        const language = codeWithoutFirstLine[0].trim();
+                        const actualCode = codeWithoutFirstLine.slice(1).join('\n').trim();
+                        
+                        // 生成唯一的ID
+                        const codeBlockId = 'code-' + Math.random().toString(36).substr(2, 9);
+                        
+                        return `
+                            <pre>
+                                <div class="code-header">
+                                    <span>${language}</span>
+                                    <button class="copy-button" data-code-id="${codeBlockId}">
+                                        <i class="fas fa-copy copy-icon"></i>
+                                        <span class="copy-text">Copy</span>
+                                    </button>
+                                </div>
+                                <code id="${codeBlockId}">${actualCode}</code>
+                            </pre>
+                        `;
+                    });
+                    messageDiv.innerHTML = formattedMessage;
+                    
+                    // 为新添加的复制按钮添加事件监听器
+                    const copyButtons = messageDiv.querySelectorAll('.copy-button');
+                    copyButtons.forEach(button => {
+                        button.addEventListener('click', function() {
+                            const codeId = this.getAttribute('data-code-id');
+                            const codeElement = document.getElementById(codeId);
+                            const textToCopy = codeElement.textContent;
+                            
+                            // 首先尝试使用现代 API
+                            if (navigator.clipboard && window.isSecureContext) {
+                                navigator.clipboard.writeText(textToCopy)
+                                    .then(() => updateCopyButton(this, true))
+                                    .catch(() => fallbackCopyTextToClipboard(textToCopy, this));
+                            } else {
+                                // 如果不支持现代 API，使用后备方法
+                                fallbackCopyTextToClipboard(textToCopy, this);
+                            }
+                        });
+                    });
+                }
+                
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            async function sendMessage() {
+                    const message = chatInput.value.trim();
+                    if (!message) return;
+
+                    // 添加用户消息
+                    addMessage(message, true);
+                    chatInput.value = '';
+
+                    try {
+                        // 发送消息到后端
+                        const response = await fetch('/chat', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ message })
+                        });
+
+                        const data = await response.json();
+                        // 修改这里，使用 data.response 而不是 data.reply
+                    if (data.error) {
+                        addMessage(data.error);
+                    } else {
+                        addMessage(data.response);
+                    }
+                } catch (error) {
+                    console.error('Error sending message:', error);
+                    addMessage('Error: Could not send message.');
+                }
+            }
+
+            sendButton.addEventListener('click', sendMessage);
+            chatInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            // History functionality
+            const historyList = document.getElementById('historyList');
+            let history = JSON.parse(localStorage.getItem('testHistory')) || [];
+
+            function updateHistoryUI() {
+                if (!historyList) return;
+
+                historyList.innerHTML = '';
+                if (history.length === 0) {
+                    historyList.innerHTML = '<p>暂无历史记录</p>';
+                    return;
+                }
+
+                if (history.length > 3) {
+                    history = history.slice(-3);
+                    localStorage.setItem('testHistory', JSON.stringify(history));
+                }
+
+                history.forEach((item, index) => {
+                    const historyItemContainer = document.createElement('div');
+                    historyItemContainer.classList.add('history-item-container');
+
+                    const timestamp = document.createElement('div');
+                    timestamp.classList.add('timestamp');
+                    timestamp.innerText = item.timestamp;
+
+                    const historyItem = document.createElement('div');
+                    historyItem.classList.add('history-item');
+                    historyItem.innerText = `Test Case ${index + 1}`;
+
+                    historyItem.addEventListener('click', () => {
+                        const textarea = document.getElementById('test_requirements');
+                        if (textarea) textarea.value = item.requirements;
+                    });
+
+                    historyItemContainer.appendChild(timestamp);
+                    historyItemContainer.appendChild(historyItem);
+                    historyList.appendChild(historyItemContainer);
+                });
+            }
+
+            // Initialize history UI
+            updateHistoryUI();
+
+            // Clear history functionality
+            const clearHistoryBtn = document.getElementById('clearHistory');
+            if (clearHistoryBtn) {
+                clearHistoryBtn.addEventListener('click', () => {
+                    localStorage.removeItem('testHistory');
+                    history = [];
+                    updateHistoryUI();
+                });
+            }
+
+            // Form submission handling
+            const form = document.querySelector('form');
+            if (form) {
+                form.addEventListener('submit', function () {
+                    const requirements = document.getElementById('test_requirements')?.value.trim();
+                    if (requirements) {
+                        const timestamp = new Date().toLocaleString();
+                        history.push({ requirements, timestamp });
+                        localStorage.setItem('testHistory', JSON.stringify(history));
+                        updateHistoryUI();
+                    }
+                });
+            }
+
+            const goBackButton = document.getElementById('goBackButton');
+            if (goBackButton) {
+                goBackButton.addEventListener('click', function () {
+                    // 隐藏覆盖率报告区域
+                    const testContainer = document.querySelector('.test-container');
+                    const coverageReport = testContainer.querySelector('h1:first-child');
+                    const coverageContainer = testContainer.querySelector('.coverage-container');
+                    const uploadForm = testContainer.querySelector('form');
+
+                    if (coverageReport) coverageReport.remove();
+                    if (coverageContainer) coverageContainer.remove();
+
+
+                    // 恢复上传表单
+                    if (uploadForm) {
+                        uploadForm.style.display = 'block';
+                    } else {
+                        // 如果表单不存在，重新创建表单
+                        const newForm = document.createElement('form');
+                        newForm.method = 'post';
+                        newForm.enctype = 'multipart/form-data';
+
+                        const requirementsLabel = document.createElement('label');
+                        requirementsLabel.htmlFor = 'test_requirements';
+                        requirementsLabel.textContent = '请输入测试需求：';
+
+                        const requirementsTextarea = document.createElement('textarea');
+                        requirementsTextarea.id = 'test_requirements';
+                        requirementsTextarea.name = 'test_requirements';
+                        requirementsTextarea.rows = 3;
+
+                        const fileUploadDiv = document.createElement('div');
+                        fileUploadDiv.classList.add('file-upload');
+
+                        const fileLabel = document.createElement('label');
+                        fileLabel.htmlFor = 'code_file';
+                        fileLabel.textContent = '上传代码文件：';
+
+                        const fileLabelCustom = document.createElement('label');
+                        fileLabelCustom.htmlFor = 'code_file';
+                        fileLabelCustom.classList.add('file-label');
+                        fileLabelCustom.textContent = '选择文件';
+
+                        const fileInput = document.createElement('input');
+                        fileInput.type = 'file';
+                        fileInput.id = 'code_file';
+                        fileInput.name = 'code_file';
+                        fileInput.accept = '.py';
+
+                        const fileNameSpan = document.createElement('span');
+                        fileNameSpan.id = 'fileName';
+                        fileNameSpan.classList.add('file-name');
+
+                        const submitInput = document.createElement('input');
+                        submitInput.type = 'submit';
+                        submitInput.value = '生成';
+
+                        fileUploadDiv.appendChild(fileLabel);
+                        fileUploadDiv.appendChild(fileLabelCustom);
+                        fileUploadDiv.appendChild(fileInput);
+                        fileUploadDiv.appendChild(fileNameSpan);
+
+                        newForm.appendChild(requirementsLabel);
+                        newForm.appendChild(requirementsTextarea);
+                        newForm.appendChild(fileUploadDiv);
+                        newForm.appendChild(submitInput);
+
+                        testContainer.appendChild(newForm);
+
+                        // 重新绑定文件上传事件
+                        fileInput.addEventListener('change', function () {
+                            if (this.files.length > 0) {
+                                fileNameSpan.textContent = this.files[0].name;
+                                const modal = document.getElementById('uploadModal');
+                                modal.classList.add('show');
+                            }
+                        });
+                    }
+                });
+            }
+            // if (goBackButton) {
+            //     // 返回上一页面并刷新
+            //     window.history.back();
+
+            //     location.reload(true);  // 强制刷新页面，忽略缓存
+
+            // }
+        });
+
+
+
+    </script>
+</body>
+
+</html>
