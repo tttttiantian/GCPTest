@@ -1,0 +1,13 @@
+# version: '3'
+services:
+  web:
+    build: .
+    ports:
+      - "6007:6007"
+    environment:
+      - CODEGEEX_API_URL=https://open.bigmodel.cn/api/paas/v4/chat/completions/
+      - CODEGEEX_API_KEY=your_api_key
+      - MODEL_ID=codegeex-4 # 这里设置模型编码
+    volumes:
+      - .:/app
+      - /app/uploads
