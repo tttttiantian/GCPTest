@@ -8,14 +8,18 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <!-- CodeMirror CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/monokai.min.css">
     <style>
         /* 原有样式保持不变 */
         /* 添加聊天界面相关样式 */
         .chat-container {
             display: flex;
             /* 或 block，根据你的布局需求 */
-            background: #667eea;
-            border-radius: 20px;
+            background: #092B42;
+            border-radius: 6px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             padding: 20px;
             max-width: 1200px;
@@ -27,12 +31,12 @@
         }
 
         .chat-messages {
-            height: calc(100% - 120px);
+            height: calc(100% - px);
             /* 调整以适应输入框 */
             overflow-y: auto;
             padding: 20px;
             background: #f5f5f5;
-            border-radius: 15px;
+            border-radius: 6px;
             margin-bottom: 20px;
             box-sizing: border-box;
         }
@@ -46,18 +50,18 @@
 
         .message.user {
             margin-left: auto;
-            background: #667eea;
+            background: #105186;
             color: white;
             padding: 15px;
-            border-radius: 20px 20px 0 20px;
+            border-radius: 6px 6px 0 6px;
         }
 
         .message.bot {
             margin-right: auto;
-            background: #e0eafc;
-            color: #333;
+            background: #F0F2F3;
+            color: #171C1D;
             padding: 15px;
-            border-radius: 20px 20px 20px 0;
+            border-radius: 6px 6px 6px 0;
         }
 
         .chat-input {
@@ -76,8 +80,8 @@
             flex-grow: 1;
             height: 100%;
             padding: 15px;
-            border: 2px solid #667eea;
-            border-radius: 25px;
+            border: 2px solid #105186;
+            border-radius: 4px;
             resize: none;
             font-size: 16px;
             box-sizing: border-box;
@@ -86,19 +90,21 @@
         .chat-input button {
             padding: 0 30px;
             height: 100%;
-            background: #667eea;
-            color: white;
+            background: #FDB338;
+            color: #171C1D;
             border: none;
-            border-radius: 25px;
+            border-radius: 4px;
             cursor: pointer;
             font-size: 16px;
+            font-weight: bold;
             transition: background-color 0.3s;
             white-space: nowrap;
             /* 防止按钮文字换行 */
         }
 
         .chat-input button:hover {
-            background: #764ba2;
+            background: #105186;
+            color: #ffffff;
         }
 
         /* 确保标题不会导致布局问题 */
@@ -152,6 +158,399 @@
                 height: 50px;
             }
         }
+
+        /* Agent迭代可视化样式 */
+        .iteration-progress-container {
+            display: none;
+            background: #092B42;
+            border-radius: 6px;
+            padding: 30px;
+            margin: 20px 0;
+            color: white;
+        }
+
+        .iteration-progress-container.active {
+            display: block;
+        }
+
+        .progress-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .progress-header h2 {
+            margin: 0 0 10px 0;
+            font-size: 24px;
+        }
+
+        .progress-header .target-info {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .iterations-timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .iteration-card {
+            background: #105186;
+            border-radius: 6px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .iteration-card.active {
+            background: #105186;
+            border: 2px solid #FDB338;
+        }
+
+        .iteration-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .iteration-title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .iteration-coverage {
+            background: rgba(253, 179, 56, 0.3);
+            padding: 5px 15px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .phases-container {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .phase-item {
+            flex: 1;
+            min-width: 120px;
+            background: rgba(240, 242, 243, 0.1);
+            border-radius: 4px;
+            padding: 12px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .phase-item.running {
+            background: rgba(255, 193, 7, 0.3);
+            animation: pulse 1.5s infinite;
+        }
+
+        .phase-item.completed {
+            background: rgba(76, 175, 80, 0.3);
+        }
+
+        .phase-item.error {
+            background: rgba(244, 67, 54, 0.3);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .phase-icon {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .phase-name {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .phase-status {
+            font-size: 10px;
+            margin-top: 5px;
+            opacity: 0.7;
+        }
+
+        .overall-progress {
+            margin-top: 25px;
+            text-align: center;
+        }
+
+        .progress-bar-container {
+            background: rgba(240, 242, 243, 0.2);
+            border-radius: 4px;
+            height: 20px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: #FDB338;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            color: #171C1D;
+        }
+
+        .status-message {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-top: 10px;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-right: 10px;
+            vertical-align: middle;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* 输入框统一样式 */
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: 'Roboto', sans-serif;
+            box-sizing: border-box;
+            margin-bottom: 15px;
+            resize: vertical;
+        }
+
+        /* 原始需求输入框 - 主要输入 */
+        #original_requirements {
+            border: 2px solid #105186;
+            background: #fff;
+        }
+
+        #original_requirements:focus {
+            border-color: #FDB338;
+            background: #fff;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(253, 179, 56, 0.15);
+        }
+
+        /* 测试策略输入框 - 可选输入 */
+        #test_requirements {
+            border: 2px dashed #ccc;
+            background: #f9f9f9;
+        }
+
+        #test_requirements:focus {
+            border-color: #999;
+            background: #fff;
+            outline: none;
+        }
+
+        /* Label样式优化 */
+        label span {
+            display: inline-block;
+        }
+
+        /* CodeMirror编辑器样式 */
+        .CodeMirror {
+            height: 500px;  /* 固定高度，确保滚动条正常显示 */
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+        }
+
+        /* 确保CodeMirror滚动区域正常工作 */
+        .CodeMirror-scroll {
+            overflow-y: auto !important;
+            overflow-x: auto !important;
+        }
+
+        /* 测试代码头部区域 - 标题和按钮在同一行 */
+        .test-code-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            gap: 20px;  /* 标题和按钮之间的最小间距 */
+            min-height: 48px;  /* 确保有足够的高度 */
+        }
+
+        .test-code-header h2 {
+            margin: 0;
+            flex-shrink: 0;
+            margin-right: auto;  /* 推送按钮到最右边 */
+        }
+
+        /* 测试代码操作按钮区域 */
+        .test-code-actions {
+            display: inline-block !important;
+            white-space: nowrap;
+        }
+
+        /* 运行测试按钮 */
+        #runTestButton,
+        .run-test-btn {
+            background: #105186 !important;
+            color: white !important;
+            padding: 10px 20px !important;
+            border: none !important;
+            border-radius: 5px !important;
+            cursor: pointer !important;
+            font-weight: 600 !important;
+            font-size: 14px !important;
+            transition: all 0.3s ease !important;
+            display: inline-block !important;
+            line-height: 1.5 !important;
+            margin: 0 !important;
+            margin-right: 12px !important;
+            vertical-align: middle !important;
+            float: none !important;
+            position: static !important;
+        }
+
+        .run-test-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .run-test-btn:hover:not(:disabled) {
+            background: #FDB338;
+            color: #171C1D;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(253, 179, 56, 0.3);
+        }
+
+        /* 复制测试代码按钮 - 统一样式 */
+        #copyTestCode {
+            background: #FDB338 !important;
+            color: #171C1D !important;
+            padding: 10px 20px !important;
+            border: none !important;
+            border-radius: 5px !important;
+            cursor: pointer !important;
+            font-weight: 600 !important;
+            font-size: 14px !important;
+            transition: all 0.3s ease !important;
+            display: inline-block !important;
+            line-height: 1.5 !important;
+            margin: 0 !important;
+            vertical-align: middle !important;
+            float: none !important;
+            position: static !important;
+        }
+
+        #copyTestCode:hover {
+            background: #105186;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 81, 134, 0.3);
+        }
+
+        .run-test-btn .btn-loading {
+            display: none;
+        }
+
+        .run-test-btn.loading .btn-text {
+            display: none;
+        }
+
+        .run-test-btn.loading .btn-loading {
+            display: inline;
+        }
+
+        /* 加载遮罩层 */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            flex-direction: column;
+        }
+
+        .overlay.show {
+            display: flex;
+        }
+
+        .overlay-content {
+            text-align: center;
+            color: white;
+        }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .overlay-tip {
+            font-size: 14px;
+            opacity: 0.8;
+            margin-top: 10px;
+        }
+
+        /* 通知提示 */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 5px;
+            color: white;
+            font-weight: 600;
+            z-index: 10000;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+            max-width: 400px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .notification.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .notification-success {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+        }
+
+        .notification-error {
+            background: linear-gradient(135deg, #eb3349 0%, #f45c43 100%);
+        }
+
+        .notification-warning {
+            background: linear-gradient(135deg, #f09819 0%, #edde5d 100%);
+        }
     </style>
 </head>
 
@@ -164,40 +563,44 @@
             <li><a href="#" class="nav-link" data-target="chat">Chat With GCPTest</a></li>
         </ul>
         <div class="history-section">
-            <h3>历史记录</h3>
+            <!-- <h3>历史记录</h3> -->
+            <h3>History Records</h3>
             <div id="historyList"></div>
-            <button id="clearHistory">清空历史记录</button>
+            <!-- <button id="clearHistory">清空历史记录</button> -->
+            <button id="clearHistory">Clear History</button>
         </div>
     </div>
-
     <div class="main-content">
-        <div id="particles-js"></div>
         <!-- 测试用例生成界面 -->
         <div class="test-container container">
             {% if coverage_report %}
-            <h1>生成结果</h1>
-
+            <!-- <h1>生成结果</h1> -->
+            <h1>Generated Results</h1>
             <div class="results-header">
-                <h2 style="display: inline-block;">覆盖率报告</h2>
-                <a href="{{ download_url }}" class="download-button">下载测试</a>
+                <!-- <h2>覆盖率报告</h2> -->
+                <h2>Coverage Report</h2>
+                <!-- <a href="{{ download_url }}" class="download-button">下载测试代码</a> -->
+                <a href="{{ download_url }}" class="download-button">Download Test Code</a>
+                <!-- <button id="goBackButton" class="go-back-btn">返回</button> -->
+                <button id="goBackButton" class="go-back-btn">Return</button>
             </div>
-
-            <!-- 返回按钮 -->
-            <button id="goBackButton" class="go-back-btn">返回</button>
-
 
             <div class="coverage-container">
                 <!-- 覆盖率摘要 -->
                 {% if coverage_report.summary %}
                 <div class="coverage-summary">
-                    <h3>覆盖率摘要</h3>
+                    <h3>Coverage Summary</h3>
                     <div class="summary-grid">
                         <div class="summary-item">
-                            <span class="label">行覆盖率:</span>
+                            <span class="label">Line Coverage:</span>
                             <span class="value">{{ coverage_report.summary.line_rate }}</span>
                         </div>
                         <div class="summary-item">
-                            <span class="label">函数覆盖率:</span>
+                            <span class="label">Branch Coverage:</span>
+                            <span class="value">{{ coverage_report.summary.branch_rate }}</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="label">Function Coverage:</span>
                             <span class="value">{{ coverage_report.summary.function_rate }}</span>
                         </div>
                     </div>
@@ -205,35 +608,103 @@
                 {% endif %}
 
                 <div class="coverage-tabs">
-                    <button class="coverage-tab active" data-target="line-coverage">行覆盖率</button>
-                    <button class="coverage-tab" data-target="function-coverage">函数覆盖率</button>
+                    <!-- <button class="coverage-tab active" data-target="line-coverage">行覆盖率</button> -->
+                    <button class="coverage-tab active" data-target="line-coverage">Total Coverage</button>
+                    <!-- <button class="coverage-tab" data-target="function-coverage">函数覆盖率</button> -->
+                    <button class="coverage-tab" data-target="function-coverage">Function Coverage</button>
                 </div>
-
                 <div class="coverage-content active" id="line-coverage">
                     <div class="report">
                         <pre>{{ coverage_report.line|safe }}</pre>
                     </div>
                 </div>
-
                 <div class="coverage-content" id="function-coverage">
                     <div class="report">
                         <pre>{{ coverage_report.function|safe }}</pre>
                     </div>
                 </div>
-
+            </div>
+            <!-- 新增显示测试代码的区域 -->
+            <div class="test-code-container">
+                <div class="test-code-header">
+                    <!-- <h2>生成的测试代码</h2> -->
+                    <h2>Generated Test Code</h2>
+                    <div class="test-code-actions">
+                        <button id="runTestButton" class="run-test-btn">
+                            <span class="btn-text">▶ Run Tests</span>
+                            <span class="btn-loading">⏳ Running...</span>
+                        </button>
+                        <!-- <button id="copyTestCode">复制测试代码</button> -->
+                        <button id="copyTestCode">Copy Test Code</button>
+                    </div>
+                </div>
+                <textarea id="testCodeEditor" style="display:none;">{{ test_code|safe }}</textarea>
             </div>
             {% else %}
             <h1 id="typingText">Hand in your requirements and code, and we'll help you generate test cases.</h1>
-            <form method="post" enctype="multipart/form-data">
-                <label for="test_requirements">请输入测试需求：</label>
-                <textarea id="test_requirements" name="test_requirements" rows="3"></textarea>
+
+            <!-- Agent迭代进度可视化区域 -->
+            <div class="iteration-progress-container" id="iterationProgress">
+                <div class="progress-header">
+                    <h2><span class="spinner"></span>Generating Test Cases...</h2>
+                    <div class="target-info">Target Coverage: <span id="targetCoverageDisplay">90%</span></div>
+                </div>
+
+                <div class="iterations-timeline" id="iterationsTimeline">
+                    <!-- 代码分析阶段 -->
+                    <div class="iteration-card" id="analysisCard">
+                        <div class="iteration-header">
+                            <span class="iteration-title">Code Analysis</span>
+                        </div>
+                        <div class="phases-container">
+                            <div class="phase-item" id="phase-code_analysis">
+                                <div class="phase-icon">🔍</div>
+                                <div class="phase-name">Analyzing Code</div>
+                                <div class="phase-status">Waiting...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="overall-progress">
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="overallProgressBar" style="width: 0%">0%</div>
+                    </div>
+                    <div class="status-message" id="statusMessage">Initializing...</div>
+                </div>
+            </div>
+
+            <form method="post" enctype="multipart/form-data" id="generateForm">
+                <!-- 新增：原始需求输入框 -->
+                <label for="original_requirements">
+                    <span style="color: white; font-weight: bold;">📋 Original Requirements (Business Spec):</span>
+                </label>
+                <textarea id="original_requirements" name="original_requirements" rows="6"
+                          placeholder="Example:&#10;## Discount Rules&#10;- SAVE10: 10% discount (×0.9), e.g. $100 → $90&#10;- SAVE20: 20% discount (×0.8)&#10;&#10;## Shipping Rules&#10;- VIP or order ≥ $99: Free shipping&#10;- Remote areas (Tibet/Xinjiang/Qinghai): $20&#10;- Other areas: $10"></textarea>
+
+                <!-- 测试策略（改为可选） -->
+                <label for="test_requirements">
+                    <span>🎯 Test Strategy (Optional):</span>
+                    <span style="font-size: 12px; opacity: 0.7; font-weight: normal;">Leave blank to use intelligent strategy based on requirements</span>
+                </label>
+                <textarea id="test_requirements" name="test_requirements" rows="3"
+                          placeholder="Optional: Specify coverage targets, special test scenarios, etc."></textarea>
+
+                <!-- Target Coverage Input -->
+                <label for="target_coverage">Target Coverage (%)：</label>
+                <input type="number" id="target_coverage" name="target_coverage"
+                       min="50" max="100" value="90" step="5"
+                       style="padding: 10px; border: 2px solid #105186; border-radius: 4px; font-size: 16px; width: 100%; box-sizing: border-box; margin-bottom: 15px;">
+
                 <div class="file-upload">
-                    <label for="code_file">上传代码文件：</label>
-                    <label for="code_file" class="file-label">选择文件</label>
+                    <!-- <label for="code_file">请上传代码文件：</label> -->
+                    <label for="code_file">Please Upload Code File：</label>
+                    <!-- <label for="code_file" class="file-label">选择文件</label> -->
+                    <label for="code_file" class="file-label">Select File</label>
                     <input type="file" id="code_file" name="code_file" accept=".py">
                     <span id="fileName" class="file-name"></span>
                 </div>
-                <input type="submit" value="生成">
+                <input type="submit" value="Generate">
             </form>
             {% endif %}
         </div>
@@ -255,12 +726,53 @@
 
     <div id="uploadModal" class="modal">
         <div class="modal-content">
-            <p>文件上传成功，请点击生成。</p>
-            <button class="close-btn" id="closeModal">关闭</button>
+            <!-- <p>文件上传成功，请点击生成。</p> -->
+            <p>File uploaded successfully. Please click “Generate.”</p>
+            <!-- <button class="close-btn" id="closeModal">关闭</button> -->
+            <button class="close-btn" id="closeModal">Close</button>
         </div>
     </div>
 
     <script>
+        // 全局变量：保存会话信息和CodeMirror实例
+        let testCodeEditor = null;
+        let currentSourceFilename = '';
+        let currentDownloadUrl = '';
+        let currentSessionId = '';  // 添加session_id变量
+
+        // 从覆盖率报告中去除会话文件夹前缀，仅显示文件名（保持列对齐）
+        function stripSessionPrefix(reportText) {
+            if (!reportText) return reportText;
+
+            // 按行处理
+            const lines = reportText.split('\n');
+            const processedLines = lines.map(line => {
+                // 匹配包含文件路径的行（不是标题行或分隔线）
+                const match = line.match(/^(\s*)((?:session_[a-f0-9]{8}|user\d+)\/)(\S+)(\s+.*)$/);
+                if (match) {
+                    // match[1]: 前导空格
+                    // match[2]: 路径前缀 (session_xxx/ 或 userN/)
+                    // match[3]: 文件名 (不含空格)
+                    // match[4]: 空格 + 数据列
+
+                    const prefix = match[1];
+                    const pathPrefix = match[2];
+                    const filename = match[3];
+                    const dataColumns = match[4];
+
+                    // 计算需要补充的空格数（被删除的路径前缀长度）
+                    const paddingNeeded = pathPrefix.length;
+                    const padding = ' '.repeat(paddingNeeded);
+
+                    // 返回：前导空格 + 文件名 + 补充空格 + 数据列
+                    return prefix + filename + padding + dataColumns;
+                }
+                return line;
+            });
+
+            return processedLines.join('\n');
+        }
+
         document.addEventListener('DOMContentLoaded', function () {
             // Tab switching functionality for coverage reports
             const tabs = document.querySelectorAll('.coverage-tab');
@@ -276,7 +788,6 @@
                     document.getElementById(targetId).classList.add('active');
                 });
             });
-
 
 
             // Navigation functionality
@@ -312,7 +823,12 @@
             }
 
             if (closeModalBtn) {
-                closeModalBtn.addEventListener('click', () => modal.classList.remove('show'));
+                closeModalBtn.addEventListener('click', () => {
+                    modal.classList.remove('show');
+                    setTimeout(() => {
+                        modal.style.opacity = 0; // 可选：添加淡出效果
+                    }, 300);
+                });
             }
 
             window.addEventListener('click', (e) => {
@@ -328,7 +844,7 @@
             function fallbackCopyTextToClipboard(text, button) {
                 const textArea = document.createElement("textarea");
                 textArea.value = text;
-                
+
                 // 将文本区域设置为不可见
                 textArea.style.position = 'fixed';
                 textArea.style.top = '0';
@@ -340,7 +856,7 @@
                 textArea.style.outline = 'none';
                 textArea.style.boxShadow = 'none';
                 textArea.style.background = 'transparent';
-                
+
                 document.body.appendChild(textArea);
                 textArea.focus();
                 textArea.select();
@@ -360,12 +876,12 @@
             function updateCopyButton(button, success) {
                 const copyText = button.querySelector('.copy-text');
                 const icon = button.querySelector('i');
-                
+
                 if (success) {
                     button.classList.add('copied');
                     copyText.textContent = 'Copied!';
                     icon.className = 'fas fa-check check-icon';
-                    
+
                     setTimeout(() => {
                         button.classList.remove('copied');
                         copyText.textContent = 'Copy';
@@ -375,7 +891,7 @@
                     button.classList.add('error');
                     copyText.textContent = 'Error!';
                     icon.className = 'fas fa-times';
-                    
+
                     setTimeout(() => {
                         button.classList.remove('error');
                         copyText.textContent = 'Copy';
@@ -388,19 +904,19 @@
             function addMessage(message, isUser = false) {
                 const messageDiv = document.createElement('div');
                 messageDiv.className = `message ${isUser ? 'user' : 'bot'}`;
-                
+
                 if (isUser) {
                     messageDiv.textContent = message;
                 } else {
                     // 处理机器人消息中的代码块
-                    const formattedMessage = message.replace(/```([\s\S]*?)```/g, function(match, code) {
+                    const formattedMessage = message.replace(/```([\s\S]*?)```/g, function (match, code) {
                         const codeWithoutFirstLine = code.split('\n');
                         const language = codeWithoutFirstLine[0].trim();
                         const actualCode = codeWithoutFirstLine.slice(1).join('\n').trim();
-                        
+
                         // 生成唯一的ID
                         const codeBlockId = 'code-' + Math.random().toString(36).substr(2, 9);
-                        
+
                         return `
                             <pre>
                                 <div class="code-header">
@@ -415,15 +931,15 @@
                         `;
                     });
                     messageDiv.innerHTML = formattedMessage;
-                    
+
                     // 为新添加的复制按钮添加事件监听器
                     const copyButtons = messageDiv.querySelectorAll('.copy-button');
                     copyButtons.forEach(button => {
-                        button.addEventListener('click', function() {
+                        button.addEventListener('click', function () {
                             const codeId = this.getAttribute('data-code-id');
                             const codeElement = document.getElementById(codeId);
                             const textToCopy = codeElement.textContent;
-                            
+
                             // 首先尝试使用现代 API
                             if (navigator.clipboard && window.isSecureContext) {
                                 navigator.clipboard.writeText(textToCopy)
@@ -436,31 +952,31 @@
                         });
                     });
                 }
-                
+
                 chatMessages.appendChild(messageDiv);
                 chatMessages.scrollTop = chatMessages.scrollHeight;
             }
 
             async function sendMessage() {
-                    const message = chatInput.value.trim();
-                    if (!message) return;
+                const message = chatInput.value.trim();
+                if (!message) return;
 
-                    // 添加用户消息
-                    addMessage(message, true);
-                    chatInput.value = '';
+                // 添加用户消息
+                addMessage(message, true);
+                chatInput.value = '';
 
-                    try {
-                        // 发送消息到后端
-                        const response = await fetch('/chat', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({ message })
-                        });
+                try {
+                    // 发送消息到后端
+                    const response = await fetch('/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ message })
+                    });
 
-                        const data = await response.json();
-                        // 修改这里，使用 data.response 而不是 data.reply
+                    const data = await response.json();
+                    // 修改这里，使用 data.response 而不是 data.reply
                     if (data.error) {
                         addMessage(data.error);
                     } else {
@@ -473,7 +989,7 @@
             }
 
             sendButton.addEventListener('click', sendMessage);
-            chatInput.addEventListener('keydown', function(e) {
+            chatInput.addEventListener('keydown', function (e) {
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
                     sendMessage();
@@ -489,7 +1005,8 @@
 
                 historyList.innerHTML = '';
                 if (history.length === 0) {
-                    historyList.innerHTML = '<p>暂无历史记录</p>';
+                    // historyList.innerHTML = '<p>暂无历史记录</p>';
+                    historyList.innerHTML = '<p>No History Records Available</p>';
                     return;
                 }
 
@@ -511,7 +1028,6 @@
                     historyItem.innerText = `Test Case ${index + 1}`;
 
                     historyItem.addEventListener('click', () => {
-                        const textarea = document.getElementById('test_requirements');
                         if (textarea) textarea.value = item.requirements;
                     });
 
@@ -551,15 +1067,19 @@
             const goBackButton = document.getElementById('goBackButton');
             if (goBackButton) {
                 goBackButton.addEventListener('click', function () {
+
+                    const resultsHeader = document.querySelector('.results-header'); // 包含标题和按钮的容器
                     // 隐藏覆盖率报告区域
                     const testContainer = document.querySelector('.test-container');
                     const coverageReport = testContainer.querySelector('h1:first-child');
                     const coverageContainer = testContainer.querySelector('.coverage-container');
                     const uploadForm = testContainer.querySelector('form');
+                    const testCodeContainer = testContainer.querySelector('.test-code-container'); // 新增
 
+                    if (resultsHeader) resultsHeader.remove(); // 移除标题和按钮
                     if (coverageReport) coverageReport.remove();
                     if (coverageContainer) coverageContainer.remove();
-
+                    if (testCodeContainer) testCodeContainer.remove(); // 新增
 
                     // 恢复上传表单
                     if (uploadForm) {
@@ -572,7 +1092,8 @@
 
                         const requirementsLabel = document.createElement('label');
                         requirementsLabel.htmlFor = 'test_requirements';
-                        requirementsLabel.textContent = '请输入测试需求：';
+                        // requirementsLabel.textContent = '请输入测试需求：';
+                        requirementsLabel.textContent = 'Please enter test requirements：';
 
                         const requirementsTextarea = document.createElement('textarea');
                         requirementsTextarea.id = 'test_requirements';
@@ -584,12 +1105,13 @@
 
                         const fileLabel = document.createElement('label');
                         fileLabel.htmlFor = 'code_file';
-                        fileLabel.textContent = '上传代码文件：';
+                        // fileLabel.textContent = '上传代码文件：';
+                        fileLabel.textContent = 'Upload Code File：';
 
                         const fileLabelCustom = document.createElement('label');
                         fileLabelCustom.htmlFor = 'code_file';
                         fileLabelCustom.classList.add('file-label');
-                        fileLabelCustom.textContent = '选择文件';
+                        fileLabelCustom.textContent = 'Select File';
 
                         const fileInput = document.createElement('input');
                         fileInput.type = 'file';
@@ -603,7 +1125,7 @@
 
                         const submitInput = document.createElement('input');
                         submitInput.type = 'submit';
-                        submitInput.value = '生成';
+                        submitInput.value = 'Generate';
 
                         fileUploadDiv.appendChild(fileLabel);
                         fileUploadDiv.appendChild(fileLabelCustom);
@@ -628,6 +1150,19 @@
                     }
                 });
             }
+
+            // 动态调整输入框高度
+            const textarea = document.getElementById('test_requirements');
+            if (textarea) {
+                textarea.addEventListener('input', function () {
+                    adjustTextareaHeight(this);
+                });
+            }
+
+            function adjustTextareaHeight(element) {
+                element.style.height = 'auto'; // 重置高度
+                element.style.height = `${element.scrollHeight}px`; // 根据内容调整高度
+            }
             // if (goBackButton) {
             //     // 返回上一页面并刷新
             //     window.history.back();
@@ -635,11 +1170,725 @@
             //     location.reload(true);  // 强制刷新页面，忽略缓存
 
             // }
+
+            // 复制测试代码功能
+            const copyButton = document.getElementById('copyTestCode');
+            if (copyButton) {
+                copyButton.addEventListener('click', function () {
+                    const testCodeElement = document.getElementById('testCode');
+                    const textToCopy = testCodeElement.innerText;
+
+                    navigator.clipboard.writeText(textToCopy).then(() => {
+                        alert('测试代码已复制到剪切板');
+                    }).catch(err => {
+                        console.error('复制失败:', err);
+                    });
+                });
+            }
+
+            // ========== Agent迭代可视化功能 ==========
+            const generateForm = document.getElementById('generateForm');
+            const iterationProgress = document.getElementById('iterationProgress');
+            const iterationsTimeline = document.getElementById('iterationsTimeline');
+            const overallProgressBar = document.getElementById('overallProgressBar');
+            const statusMessage = document.getElementById('statusMessage');
+            const targetCoverageDisplay = document.getElementById('targetCoverageDisplay');
+
+            let currentIteration = 0;
+            let targetCoverage = 90;
+
+            if (generateForm) {
+                generateForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+
+                    const formData = new FormData(generateForm);
+                    const codeFile = document.getElementById('code_file');
+
+                    if (!codeFile.files.length) {
+                        alert('Please select a code file to upload.');
+                        return;
+                    }
+
+                    // 获取目标覆盖率
+                    targetCoverage = parseFloat(formData.get('target_coverage')) || 90;
+                    targetCoverageDisplay.textContent = targetCoverage + '%';
+
+                    // 显示进度区域，隐藏表单
+                    generateForm.style.display = 'none';
+                    document.getElementById('typingText').style.display = 'none';
+                    iterationProgress.classList.add('active');
+
+                    // 重置UI
+                    resetProgressUI();
+
+                    // 使用fetch发送请求并使用SSE接收响应
+                    startStreamGeneration(formData);
+                });
+            }
+
+            function resetProgressUI() {
+                currentIteration = 0;
+                overallProgressBar.style.width = '0%';
+                overallProgressBar.textContent = '0%';
+                statusMessage.textContent = 'Initializing...';
+
+                // 重置代码分析阶段
+                const analysisPhase = document.getElementById('phase-code_analysis');
+                if (analysisPhase) {
+                    analysisPhase.className = 'phase-item';
+                    analysisPhase.querySelector('.phase-status').textContent = 'Waiting...';
+                }
+
+                // 清除之前的迭代卡片（保留分析卡片）
+                const cards = iterationsTimeline.querySelectorAll('.iteration-card:not(#analysisCard)');
+                cards.forEach(card => card.remove());
+            }
+
+            function startStreamGeneration(formData) {
+                // 使用XMLHttpRequest发送POST请求并接收SSE流
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', '/generate-stream', true);
+
+                let lastIndex = 0;
+
+                function processResponseText() {
+                    const responseText = xhr.responseText.substring(lastIndex);
+                    lastIndex = xhr.responseText.length;
+
+                    // 解析SSE数据
+                    const lines = responseText.split('\n');
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const data = JSON.parse(line.substring(6));
+                                console.log('Received SSE event:', data.event);
+                                handleSSEEvent(data);
+                            } catch (e) {
+                                console.error('Parse error:', e, 'Line:', line);
+                            }
+                        }
+                    }
+                }
+
+                xhr.onprogress = function() {
+                    processResponseText();
+                };
+
+                xhr.onerror = function() {
+                    statusMessage.textContent = 'Error: Connection failed';
+                    console.error('XHR error');
+                };
+
+                xhr.onload = function() {
+                    // 处理最后一批数据
+                    processResponseText();
+
+                    if (xhr.status !== 200) {
+                        statusMessage.textContent = 'Error: ' + xhr.statusText;
+                    }
+                    console.log('XHR completed with status:', xhr.status);
+                };
+
+                xhr.send(formData);
+            }
+
+            // 添加全局变量追踪结果展示状态
+            let resultDisplayed = false;
+            let completeEventReceived = false;
+            let completeEventTimeout = null;
+
+            function handleSSEEvent(data) {
+                console.log('SSE Event received:', data.event, data);
+
+                switch (data.event) {
+                    case 'start':
+                        statusMessage.textContent = 'Starting test generation...';
+                        break;
+
+                    case 'phase':
+                        updatePhaseStatus(data);
+                        break;
+
+                    case 'iteration_start':
+                        currentIteration = data.iteration;
+                        addIterationCard(data.iteration);
+                        statusMessage.textContent = `Iteration ${data.iteration}: Starting...`;
+                        break;
+
+                    case 'iteration_end':
+                        updateIterationCoverage(data.iteration, data.current_coverage);
+                        updateProgressBar(data.current_coverage);
+                        if (data.target_reached) {
+                            statusMessage.textContent = `Target coverage reached! (${data.current_coverage.toFixed(1)}%)`;
+                        } else {
+                            statusMessage.textContent = `Iteration ${data.iteration} completed. Coverage: ${data.current_coverage.toFixed(1)}%`;
+                        }
+                        break;
+
+                    case 'complete':
+                        console.log('Complete event received with result data');
+                        statusMessage.innerHTML = `<span style="color: #4CAF50;">✓</span> Generation complete! ${data.test_count} tests generated, final coverage: ${data.final_coverage.toFixed(1)}%`;
+
+                        // complete事件现在包含所有结果数据，直接显示结果页面
+                        if (data.coverage_report && data.test_code) {
+                            console.log('Displaying results from complete event...');
+
+                            // 清除可能存在的超时定时器
+                            if (completeEventTimeout) {
+                                clearTimeout(completeEventTimeout);
+                                completeEventTimeout = null;
+                            }
+
+                            // 如果有错误但仍然有结果，显示警告
+                            if (data.error_occurred && data.error_message) {
+                                console.warn('Result generated with error:', data.error_message);
+                                statusMessage.innerHTML = `<span style="color: #FF9800;">⚠️</span> Completed with issues: ${data.error_message}`;
+                            }
+
+                            // 标记结果已显示
+                            resultDisplayed = true;
+                            displayFinalResult(data);
+                        } else {
+                            console.warn('Complete event missing result data, will wait for final_result');
+                            completeEventReceived = true;
+                            // 设置超时：如果20秒内没有收到final_result，刷新页面
+                            completeEventTimeout = setTimeout(() => {
+                                if (!resultDisplayed) {
+                                    console.log('Timeout waiting for final_result, reloading...');
+                                    window.location.reload();
+                                }
+                            }, 20000);
+                        }
+                        break;
+
+                    case 'final_result':
+                        console.log('Displaying final result...', {
+                            has_coverage_report: !!data.coverage_report,
+                            has_test_code: !!data.test_code,
+                            download_url: data.download_url,
+                            error_occurred: data.error_occurred
+                        });
+
+                        // 清除超时
+                        if (completeEventTimeout) {
+                            clearTimeout(completeEventTimeout);
+                            completeEventTimeout = null;
+                        }
+
+                        // 如果有错误但仍然有结果，显示警告
+                        if (data.error_occurred && data.error_message) {
+                            console.warn('Result generated with error:', data.error_message);
+                            statusMessage.innerHTML = `<span style="color: #FF9800;">⚠️</span> Completed with issues: ${data.error_message}`;
+                        }
+
+                        // 标记结果已显示
+                        resultDisplayed = true;
+                        displayFinalResult(data);
+                        break;
+
+                    case 'error':
+                        statusMessage.textContent = 'Error: ' + data.message;
+                        console.error('Error event:', data.message);
+
+                        // 如果在 complete 之后收到错误，刷新页面获取可能已生成的结果
+                        if (completeEventReceived && !resultDisplayed) {
+                            console.log('Error after complete - reloading to fetch partial results...');
+                            setTimeout(() => {
+                                if (!resultDisplayed) {
+                                    statusMessage.innerHTML = '<span style="color: #FF9800;">⚠️</span> Loading partial results...';
+                                    window.location.reload();
+                                }
+                            }, 1000);
+                        } else if (!completeEventReceived) {
+                            // 如果在 complete 之前就出错，等待2秒后也尝试刷新，可能有部分结果
+                            console.log('Error before complete - will try to reload for any partial results...');
+                            setTimeout(() => {
+                                console.log('Attempting to reload for partial results...');
+                                statusMessage.innerHTML = '<span style="color: #FF9800;">⚠️</span> Checking for partial results...';
+                                window.location.reload();
+                            }, 2000);
+                        }
+                        break;
+
+                    case 'max_iterations_reached':
+                        statusMessage.textContent = `Max iterations reached. Final coverage: ${data.final_coverage.toFixed(1)}%`;
+                        break;
+
+                    default:
+                        console.warn('Unknown event type:', data.event);
+                }
+            }
+
+            function updatePhaseStatus(data) {
+                const phaseId = `phase-${data.phase}`;
+                let phaseElement = document.getElementById(phaseId);
+
+                // 如果是迭代中的阶段，需要找到对应迭代卡片中的阶段
+                if (data.iteration > 0) {
+                    const iterationCard = document.getElementById(`iteration-${data.iteration}`);
+                    if (iterationCard) {
+                        phaseElement = iterationCard.querySelector(`[data-phase="${data.phase}"]`);
+                    }
+                }
+
+                if (!phaseElement) return;
+
+                // 更新状态
+                phaseElement.className = 'phase-item ' + data.status;
+
+                const statusEl = phaseElement.querySelector('.phase-status');
+                if (data.status === 'running') {
+                    statusEl.textContent = 'Running...';
+                    statusMessage.textContent = `${data.phase_name}...`;
+                } else if (data.status === 'completed') {
+                    statusEl.textContent = 'Completed';
+                    if (data.data) {
+                        // 显示额外信息
+                        if (data.data.test_count) {
+                            statusEl.textContent = `${data.data.test_count} tests`;
+                        } else if (data.data.line_coverage !== undefined) {
+                            statusEl.textContent = `Line: ${data.data.line_coverage.toFixed(1)}%`;
+                        } else if (data.data.functions_count !== undefined) {
+                            statusEl.textContent = `${data.data.functions_count} functions`;
+                        }
+                    }
+                }
+            }
+
+            function addIterationCard(iteration) {
+                const card = document.createElement('div');
+                card.className = 'iteration-card active';
+                card.id = `iteration-${iteration}`;
+                card.innerHTML = `
+                    <div class="iteration-header">
+                        <span class="iteration-title">Iteration ${iteration}</span>
+                        <span class="iteration-coverage" id="coverage-${iteration}">Coverage: --</span>
+                    </div>
+                    <div class="phases-container">
+                        <div class="phase-item" data-phase="test_generation">
+                            <div class="phase-icon">📝</div>
+                            <div class="phase-name">Generate Tests</div>
+                            <div class="phase-status">Waiting...</div>
+                        </div>
+                        <div class="phase-item" data-phase="test_execution">
+                            <div class="phase-icon">▶️</div>
+                            <div class="phase-name">Execute Tests</div>
+                            <div class="phase-status">Waiting...</div>
+                        </div>
+                        <div class="phase-item" data-phase="coverage_analysis">
+                            <div class="phase-icon">📊</div>
+                            <div class="phase-name">Analyze Coverage</div>
+                            <div class="phase-status">Waiting...</div>
+                        </div>
+                    </div>
+                `;
+
+                // 移除之前迭代卡片的active状态
+                const prevCards = iterationsTimeline.querySelectorAll('.iteration-card.active');
+                prevCards.forEach(c => c.classList.remove('active'));
+
+                iterationsTimeline.appendChild(card);
+            }
+
+            function updateIterationCoverage(iteration, coverage) {
+                const coverageEl = document.getElementById(`coverage-${iteration}`);
+                if (coverageEl) {
+                    coverageEl.textContent = `Coverage: ${coverage.toFixed(1)}%`;
+                }
+            }
+
+            function updateProgressBar(coverage) {
+                const percentage = Math.min((coverage / targetCoverage) * 100, 100);
+                overallProgressBar.style.width = percentage + '%';
+                overallProgressBar.textContent = coverage.toFixed(1) + '%';
+            }
+
+            function displayFinalResult(data) {
+                console.log('displayFinalResult called with data:', data);
+
+                try {
+                    // 验证数据完整性
+                    if (!data || !data.coverage_report) {
+                        console.error('Invalid data received:', data);
+                        alert('Error: Invalid result data received. Missing coverage report.');
+                        return;
+                    }
+
+                    if (!data.coverage_report.summary) {
+                        console.error('Invalid coverage report data:', data.coverage_report);
+                        alert('Error: Coverage report is missing summary data.');
+                        return;
+                    }
+
+                    // 保存源文件名、下载URL和session_id（用于后续重新运行测试）
+                    if (data.source_filename) {
+                        currentSourceFilename = data.source_filename;
+                        console.log('Saved source filename:', currentSourceFilename);
+                    }
+                    if (data.download_url) {
+                        currentDownloadUrl = data.download_url;
+                        console.log('Saved download URL:', currentDownloadUrl);
+                    }
+                    if (data.session_id) {
+                        currentSessionId = data.session_id;
+                        console.log('Saved session ID:', currentSessionId);
+                    }
+
+                    // 隐藏进度区域
+                    const iterationProgress = document.getElementById('iterationProgress');
+                    if (iterationProgress) {
+                        iterationProgress.classList.remove('active');
+                        iterationProgress.style.display = 'none';
+                        console.log('Hidden iteration progress');
+                    }
+
+                    // 创建结果显示
+                    const testContainer = document.querySelector('.test-container');
+                    console.log('Test container found:', !!testContainer);
+
+                    if (!testContainer) {
+                        console.error('Test container not found!');
+                        alert('Error: Cannot find result container element.');
+                        return;
+                    }
+
+                    testContainer.innerHTML = `
+                        <h1>Generated Results</h1>
+                        ${data.error_occurred ? `
+                        <div style="background: rgba(255, 152, 0, 0.1); border-left: 4px solid #FF9800; padding: 15px; margin-bottom: 20px; border-radius: 5px;">
+                            <h3 style="color: #FF9800; margin: 0 0 10px 0;">⚠️ Completed with Issues</h3>
+                            <p style="margin: 0; color: #666;">${data.error_message || 'Some errors occurred during generation, but partial results are available.'}</p>
+                        </div>
+                        ` : ''}
+                        <div class="results-header">
+                            <h2>Coverage Report</h2>
+                            <a href="${data.download_url || '#'}" class="download-button">Download Test Code</a>
+                            <button id="goBackButton" class="go-back-btn">Return</button>
+                        </div>
+
+                        <div class="coverage-container">
+                            <div class="coverage-summary">
+                                <h3>Coverage Summary</h3>
+                                <div class="summary-grid">
+                                    <div class="summary-item">
+                                        <span class="label">Line Coverage:</span>
+                                        <span class="value">${data.coverage_report.summary?.line_rate || 'N/A'}</span>
+                                    </div>
+                                    <div class="summary-item">
+                                        <span class="label">Branch Coverage:</span>
+                                        <span class="value">${data.coverage_report.summary?.branch_rate || 'N/A'}</span>
+                                    </div>
+                                    <div class="summary-item">
+                                        <span class="label">Function Coverage:</span>
+                                        <span class="value">${data.coverage_report.summary?.function_rate || 'N/A'}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="coverage-tabs">
+                                <button class="coverage-tab active" data-target="line-coverage">Total Coverage</button>
+                                <button class="coverage-tab" data-target="function-coverage">Function Coverage</button>
+                                <button class="coverage-tab" data-target="pytest-output">Test Results</button>
+                            </div>
+                            <div class="coverage-content active" id="line-coverage">
+                                <div class="report">
+                                    <pre>${stripSessionPrefix(data.coverage_report.line) || 'No report available'}</pre>
+                                </div>
+                            </div>
+                            <div class="coverage-content" id="function-coverage">
+                                <div class="report">
+                                    <pre>${stripSessionPrefix(data.coverage_report.function) || 'No report available'}</pre>
+                                </div>
+                            </div>
+                            <div class="coverage-content" id="pytest-output">
+                                <div class="report">
+                                    <pre>${escapeHtml(data.test_output || 'No test output available')}</pre>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="test-code-container">
+                            <div class="test-code-header">
+                                <h2>Generated Test Code</h2>
+                                <div class="test-code-actions">
+                                    <button id="runTestButton" class="run-test-btn">
+                                        <span class="btn-text">▶ Run Tests</span>
+                                        <span class="btn-loading">⏳ Running...</span>
+                                    </button>
+                                    <button id="copyTestCode">Copy Test Code</button>
+                                </div>
+                            </div>
+                            <textarea id="testCodeEditor" style="display:none;">${escapeHtml(data.test_code || 'No test code available')}</textarea>
+                        </div>
+                    `;
+
+                    console.log('Test container HTML updated successfully');
+
+                    // 重新绑定事件
+                    bindResultEvents();
+                    console.log('Result events bound successfully');
+
+                } catch (error) {
+                    console.error('Error displaying final result:', error);
+                    alert('Error displaying results: ' + error.message);
+
+                    // 尝试显示错误信息给用户
+                    const statusMessage = document.getElementById('statusMessage');
+                    if (statusMessage) {
+                        statusMessage.textContent = 'Error displaying results. Please check console for details.';
+                        statusMessage.style.color = '#f44336';
+                    }
+                }
+            }
+
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            function bindResultEvents() {
+                // 绑定tab切换
+                const tabs = document.querySelectorAll('.coverage-tab');
+                const contents = document.querySelectorAll('.coverage-content');
+
+                tabs.forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        tabs.forEach(t => t.classList.remove('active'));
+                        contents.forEach(c => c.classList.remove('active'));
+                        tab.classList.add('active');
+                        const targetId = tab.getAttribute('data-target');
+                        document.getElementById(targetId).classList.add('active');
+                    });
+                });
+
+                // 绑定返回按钮
+                const goBackBtn = document.getElementById('goBackButton');
+                if (goBackBtn) {
+                    goBackBtn.addEventListener('click', function() {
+                        location.reload();
+                    });
+                }
+
+                // 初始化CodeMirror编辑器
+                const editorTextarea = document.getElementById('testCodeEditor');
+                if (editorTextarea && !testCodeEditor) {
+                    testCodeEditor = CodeMirror.fromTextArea(editorTextarea, {
+                        mode: 'python',
+                        theme: 'monokai',
+                        lineNumbers: true,
+                        indentUnit: 4,
+                        indentWithTabs: false,
+                        lineWrapping: true,
+                        matchBrackets: true,
+                        autoCloseBrackets: true,
+                        scrollbarStyle: 'native',  // 使用原生滚动条
+                        extraKeys: {
+                            'Ctrl-Enter': function(cm) {
+                                runEditedTests();
+                            },
+                            'Cmd-Enter': function(cm) {
+                                runEditedTests();
+                            }
+                        }
+                    });
+                    console.log('CodeMirror editor initialized');
+                }
+
+                // 绑定复制按钮（从编辑器获取内容）
+                const copyBtn = document.getElementById('copyTestCode');
+                if (copyBtn) {
+                    copyBtn.addEventListener('click', function() {
+                        let testCode = '';
+                        if (testCodeEditor) {
+                            testCode = testCodeEditor.getValue();
+                        } else {
+                            testCode = document.getElementById('testCodeEditor')?.value || '';
+                        }
+
+                        navigator.clipboard.writeText(testCode).then(() => {
+                            showNotification('Test code copied to clipboard!', 'success');
+                        }).catch(err => {
+                            console.error('Failed to copy:', err);
+                            showNotification('Failed to copy code', 'error');
+                        });
+                    });
+                }
+
+                // 绑定运行测试按钮
+                const runTestBtn = document.getElementById('runTestButton');
+                if (runTestBtn) {
+                    runTestBtn.addEventListener('click', runEditedTests);
+                }
+            }
+
+            // 运行编辑后的测试
+            async function runEditedTests() {
+                const runButton = document.getElementById('runTestButton');
+                if (!runButton || runButton.disabled) return;
+
+                // 检查是否有编辑器实例
+                if (!testCodeEditor) {
+                    showNotification('Editor not initialized', 'error');
+                    return;
+                }
+
+                // 检查是否有源文件名
+                if (!currentSourceFilename) {
+                    showNotification('Source filename not found. Please regenerate tests.', 'error');
+                    return;
+                }
+
+                // 显示加载状态
+                runButton.disabled = true;
+                runButton.classList.add('loading');
+                showOverlay('Running tests...', 'This may take 10-30 seconds');
+
+                try {
+                    // 获取编辑器内容
+                    const editedCode = testCodeEditor.getValue();
+
+                    // 发送请求
+                    const response = await fetch('/rerun-tests', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        credentials: 'same-origin',  // 包含cookies（Flask session）
+                        body: JSON.stringify({
+                            test_code: editedCode,
+                            source_filename: currentSourceFilename,
+                            session_id: currentSessionId  // 显式传递session_id
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        // 刷新覆盖率报告
+                        updateCoverageReport(data.coverage_report);
+
+                        // 刷新pytest输出
+                        updateTestOutput(data.test_output);
+
+                        // 更新下载链接
+                        if (data.download_url) {
+                            updateDownloadUrl(data.download_url);
+                        }
+
+                        // 显示成功提示
+                        showNotification('Tests completed successfully!', 'success');
+                    } else {
+                        showNotification('Test execution failed: ' + (data.error || 'Unknown error'), 'error');
+                    }
+
+                } catch (error) {
+                    console.error('Error running tests:', error);
+                    showNotification('Failed to run tests: ' + error.message, 'error');
+                } finally {
+                    // 恢复按钮状态
+                    runButton.disabled = false;
+                    runButton.classList.remove('loading');
+                    hideOverlay();
+                }
+            }
+
+            // 更新覆盖率报告
+            function updateCoverageReport(coverageReport) {
+                if (!coverageReport || !coverageReport.summary) return;
+
+                // 更新Summary
+                const summaryItems = document.querySelectorAll('.summary-item .value');
+                if (summaryItems.length >= 3) {
+                    summaryItems[0].textContent = coverageReport.summary.line_rate || 'N/A';
+                    summaryItems[1].textContent = coverageReport.summary.branch_rate || 'N/A';
+                    summaryItems[2].textContent = coverageReport.summary.function_rate || 'N/A';
+                }
+
+                // 更新详细报告（去除会话文件夹前缀）
+                const lineCoverageContent = document.querySelector('#line-coverage pre');
+                if (lineCoverageContent && coverageReport.line) {
+                    lineCoverageContent.textContent = stripSessionPrefix(coverageReport.line);
+                }
+
+                const functionCoverageContent = document.querySelector('#function-coverage pre');
+                if (functionCoverageContent && coverageReport.function) {
+                    functionCoverageContent.textContent = stripSessionPrefix(coverageReport.function);
+                }
+            }
+
+            // 更新pytest输出
+            function updateTestOutput(testOutput) {
+                const pytestContent = document.querySelector('#pytest-output pre');
+                if (pytestContent && testOutput) {
+                    pytestContent.textContent = testOutput;
+                }
+            }
+
+            // 更新下载链接
+            function updateDownloadUrl(downloadUrl) {
+                const downloadBtn = document.querySelector('.download-button');
+                if (downloadBtn && downloadUrl) {
+                    downloadBtn.href = downloadUrl;
+                    currentDownloadUrl = downloadUrl;
+                }
+            }
+
+            // 显示通知
+            function showNotification(message, type) {
+                // 创建通知元素
+                const notification = document.createElement('div');
+                notification.className = `notification notification-${type}`;
+                notification.textContent = message;
+                document.body.appendChild(notification);
+
+                // 显示动画
+                setTimeout(() => {
+                    notification.classList.add('show');
+                }, 10);
+
+                // 自动隐藏
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                    setTimeout(() => notification.remove(), 300);
+                }, 3000);
+            }
+
+            // 显示加载遮罩
+            function showOverlay(message, tip) {
+                let overlay = document.getElementById('testRunningOverlay');
+                if (!overlay) {
+                    overlay = document.createElement('div');
+                    overlay.id = 'testRunningOverlay';
+                    overlay.className = 'overlay';
+                    overlay.innerHTML = `
+                        <div class="overlay-content">
+                            <div class="spinner"></div>
+                            <p>${message || 'Running tests...'}</p>
+                            <p class="overlay-tip">${tip || 'Please wait...'}</p>
+                        </div>
+                    `;
+                    document.body.appendChild(overlay);
+                }
+                overlay.classList.add('show');
+            }
+
+            // 隐藏加载遮罩
+            function hideOverlay() {
+                const overlay = document.getElementById('testRunningOverlay');
+                if (overlay) {
+                    overlay.classList.remove('show');
+                }
+            }
         });
 
 
 
     </script>
+
+    <!-- CodeMirror JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/python/python.min.js"></script>
 </body>
 
 </html>
