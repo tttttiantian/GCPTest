@@ -1,0 +1,75 @@
+_____________________ test_calculate_total_multiple_items ______________________
+
+    def test_calculate_total_multiple_items():
+        items = [{'price': 10.0, 'quantity': 2}, {'price': 20.0, 'quantity': 1}]
+>       assert calculate_total(items) == 50.0
+E       AssertionError: assert 40.0 == 50.0
+E        +  where 40.0 = calculate_total([{'price': 10.0, 'quantity': 2}, {'price': 20.0, 'quantity': 1}])
+
+test_demo_order_system.py:15: AssertionError
+________________________ test_calculate_total_rounding _________________________
+
+    def test_calculate_total_rounding():
+        item = {'price': 9.99, 'quantity': 1}
+>       assert calculate_total([item]) == 10.0
+E       AssertionError: assert 9.99 == 10.0
+E        +  where 9.99 = calculate_total([{'price': 9.99, 'quantity': 1}])
+
+test_demo_order_system.py:19: AssertionError
+_______________________ test_calculate_shipping_total_99 _______________________
+
+    def test_calculate_shipping_total_99():
+        total = 99.0
+>       assert calculate_shipping(total, province=None, is_vip=False) == 10.0
+E       assert 0.0 == 10.0
+E        +  where 0.0 = calculate_shipping(99.0, province=None, is_vip=False)
+
+test_demo_order_system.py:43: AssertionError
+________________________ test_calculate_shipping_remote ________________________
+
+    def test_calculate_shipping_remote():
+        total = 100.0
+>       assert calculate_shipping(total, province='西藏', is_vip=False) == 20.0
+E       AssertionError: assert 0.0 == 20.0
+E        +  where 0.0 = calculate_shipping(100.0, province='西藏', is_vip=False)
+
+test_demo_order_system.py:51: AssertionError
+_______________________ test_process_order_missing_items _______________________
+
+    def test_process_order_missing_items():
+        order_data = {'order_id': '123', 'customer_id': '456'}
+        result = process_order(order_data)
+        assert not result['success']
+>       assert result['error'] == "无商品"
+E       AssertionError: assert '缺少字段: items' == '无商品'
+E         
+E         - 无商品
+E         + 缺少字段: items
+
+test_demo_order_system.py:63: AssertionError
+___________________________ test_process_order_valid ___________________________
+
+    def test_process_order_valid():
+        order_data = {
+            'order_id': '123',
+            'customer_id': '456',
+            'items': [{'price': 10.0, 'quantity': 1}, {'price': 20.0, 'quantity': 1}],
+            'discount_code': 'SAVE10',
+            'province': '北京',
+            'is_vip': False
+        }
+        result = process_order(order_data)
+        assert result['success']
+>       assert result['total'] == 30.0
+E       assert 27.0 == 30.0
+
+test_demo_order_system.py:82: AssertionError
+_____________________ test_process_order_customer_id_empty _____________________
+
+    def test_process_order_customer_id_empty():
+        order_data = {'order_id': '123', 'customer_id': '', 'items': [{'price': 10.0, 'quantity': 1}, {'price': 20.0, 'quantity': 1}]}
+        result = process_order(order_data)
+>       assert not result['success']
+E       assert not True
+
+test_demo_order_system.py:125: AssertionError
