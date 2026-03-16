@@ -1,15 +1,15 @@
 # 运行时作为父镜像
-FROM python:3.8-slim
+FROM python:3.10-slim
 
 # 设置工作目录
 WORKDIR /app
 
-# 安装 Flask
-RUN pip install Flask
+# 复制requirements.txt
+COPY requirements.txt /app/
 
-# 安装 pytest 和 pytest-cov
-RUN pip install pytest requests pytest-cov
-RUN pip install coverage pytest pytest-cov
+# 安装依赖
+RUN pip install --no-cache-dir -r requirements.txt && \
+    pip install pytest pytest-cov coverage
 
 # 复制当前目录内容到容器中的工作目录
 COPY . /app
@@ -17,5 +17,5 @@ COPY . /app
 # 暴露端口 6007
 EXPOSE 6007
 
-# 运行应用
-CMD ["flask", "run", "--host=0.0.0.0", "--port=6007"]
+# 使用Gunicorn运行（支持70并发）
+CMD ["gunicorn", "-c", "gunicorn_config.py", "app:app"]
