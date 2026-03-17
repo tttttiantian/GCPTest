@@ -332,5 +332,3 @@ GCPTest/
 ```
 
 ---
-
-**Made by ddddddij**
